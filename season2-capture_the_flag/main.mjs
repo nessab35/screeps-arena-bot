@@ -1,40 +1,52 @@
 import { getObjectsByPrototype } from "game/utils";
 import { Creep, Flag } from "game/prototypes";
 
+function runDefenders(defenders, enemies, myFlag) {
+	// defender logic
+	for (var creep of defenders) {
+		var target = creep.findInRange(enemies, 10)[0];
+		if (target) {
+			// enemy spotted- shoot them
+			creep.rangedAttack(target);
+		} else {
+			// no enemy- go to flag to protect
+			creep.moveTo(myFlag);
+		}
+	}
+}
+
+function runRunners(runners, enemies, enemyFlag) {
+	// runner logic
+	for (var creep of runners) {
+		var target = creep.findInRange(enemies, 10)[0];
+		if (target) {
+			// enemy spotted- shoot them
+			creep.rangedAttack(target);
+		}
+		// prioritize going to enemy flag
+		creep.moveTo(enemyFlag);
+	}
+}
+
+function runFighters(fighters, enemies) {
+	// fighter logic
+	for (var creep of fighters) {
+		var target = creep.findClosestByRange(enemies);
+		// fighting only
+		if (target) {
+			creep.rangedAttack(target);
+			creep.moveTo(target);
+		}
+	}
+}
+
 export function loop() {
 	var enemyFlag = getObjectsByPrototype(Flag).find((object) => !object.my);
 	var myFlag = getObjectsByPrototype(Flag).find((object) => object.my);
 	var myCreeps = getObjectsByPrototype(Creep).filter((object) => object.my);
 	var enemies = getObjectsByPrototype(Creep).filter((object) => !object.my);
 
-	// making groups with specific tasks
-	for (var i = 0; i < myCreeps.length; i++) {
-		var creep = myCreeps[i];
-
-		if (i < 4) {
-			// defender- shoot and don't move
-			var target = creep.findInRange(enemies, 10)[0];
-			if (target) {
-				// enemy spotted- shoot them
-				creep.rangedAttack(target);
-			} else {
-				// no enemy = go to flag to protext
-				creep.moveTo(myFlag);
-			}
-		} else if (i < 9) {
-			// runner- shoot and move to flag
-			var target = creep.findInRange(enemies, 10)[0];
-			if (target) {
-				creep.rangedAttack(target);
-			}
-			creep.moveTo(enemyFlag);
-		} else {
-			// fighter- shoot and chase enemies
-			var target = creep.findClosestByRange(enemies);
-			if (target) {
-				creep.rangedAttack(target);
-				creep.moveTo(target);
-			}
-		}
-	}
+	runDefenders(myCreeps.slice(0, 4), enemies, myFlag);
+	runRunners(myCreeps.slice(4, 9), enemies, enemyFlag);
+	runFighters(myCreeps.slice(9), enemies);
 }
