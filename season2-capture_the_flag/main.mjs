@@ -1,22 +1,40 @@
 import { getObjectsByPrototype } from "game/utils";
-import { Creep, Flag } from "game/prototypes";
+import {
+	Creep,
+	Flag,
+	StructureContainer,
+	StructureTower,
+} from "game/prototypes";
+import { RESOURCE_ENERGY, ERR_NOT_IN_RANGE } from "game/constants";
 
-function runDefenders(defenders, enemies, myFlag) {
+function runDefenders(defenders, enemies, container, tower, myFlag) {
 	// defender logic
-	for (var creep of defenders) {
+	for (var i = 0; i < defenders.length; i++) {
+		var creep = defenders[i];
 		var target = creep.findInRange(enemies, 10)[0];
 		if (target) {
 			// enemy spotted- shoot them
 			creep.rangedAttack(target);
+		} else if (i == 0) {
+			// first defender feeds the tower
+			if (creep.store[RESOURCE_ENERGY] == 0) {
+				if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+					creep.moveTo(container);
+				}
+			} else {
+				if (creep.transfer(tower, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+					creep.moveTo(tower);
+				}
+			}
 		} else {
-			// no enemy- go to flag to protect
+			// rest of defenders guard flag
 			creep.moveTo(myFlag);
 		}
 	}
 }
 
 function runRunners(runners, enemies, enemyFlag) {
-	// runner logic
+	// runner logics
 	for (var creep of runners) {
 		var target = creep.findInRange(enemies, 10)[0];
 		if (target) {
@@ -45,8 +63,10 @@ export function loop() {
 	var myFlag = getObjectsByPrototype(Flag).find((object) => object.my);
 	var myCreeps = getObjectsByPrototype(Creep).filter((object) => object.my);
 	var enemies = getObjectsByPrototype(Creep).filter((object) => !object.my);
+	var tower = getObjectsByPrototype(StructureTower).find((object) => object.my);
+	var container = getObjectsByPrototype(StructureContainer)[0];
 
-	runDefenders(myCreeps.slice(0, 4), enemies, myFlag);
+	runDefenders(myCreeps.slice(0, 4), enemies, container, tower, myFlag);
 	runRunners(myCreeps.slice(4, 9), enemies, enemyFlag);
 	runFighters(myCreeps.slice(9), enemies);
 }
