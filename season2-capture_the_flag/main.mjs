@@ -1,3 +1,6 @@
+// Screeps Arena Bot Game
+// Final Submission
+// Objective- Capture the flag
 import { getObjectsByPrototype } from "game/utils";
 import {
 	Creep,
@@ -15,7 +18,8 @@ function runDefenders(defenders, enemies, container, tower, myFlag) {
 		if (target) {
 			// enemy spotted- shoot them
 			creep.rangedAttack(target);
-		} else if (i == 0) {
+		}
+		if (i == 0) {
 			// first defender feeds the tower
 			if (creep.store[RESOURCE_ENERGY] == 0) {
 				if (creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
@@ -46,7 +50,7 @@ function runRunners(runners, enemies, enemyFlag) {
 	}
 }
 
-function runFighters(fighters, enemies) {
+function runFighters(fighters, enemies, enemyFlag) {
 	// fighter logic
 	for (var creep of fighters) {
 		var target = creep.findClosestByRange(enemies);
@@ -54,10 +58,13 @@ function runFighters(fighters, enemies) {
 		if (target) {
 			creep.rangedAttack(target);
 			creep.moveTo(target);
+		} else {
+			creep.moveTo(enemyFlag);
 		}
 	}
 }
 
+// test
 export function loop() {
 	var enemyFlag = getObjectsByPrototype(Flag).find((object) => !object.my);
 	var myFlag = getObjectsByPrototype(Flag).find((object) => object.my);
@@ -66,7 +73,8 @@ export function loop() {
 	var tower = getObjectsByPrototype(StructureTower).find((object) => object.my);
 	var container = getObjectsByPrototype(StructureContainer)[0];
 
-	runDefenders(myCreeps.slice(0, 4), enemies, container, tower, myFlag);
-	runRunners(myCreeps.slice(4, 9), enemies, enemyFlag);
-	runFighters(myCreeps.slice(9), enemies);
+	// changed amount of bots @ each task for better win consistency
+	runDefenders(myCreeps.slice(0, 2), enemies, container, tower, myFlag);
+	runRunners(myCreeps.slice(2, 9), enemies, enemyFlag);
+	runFighters(myCreeps.slice(9), enemies, enemyFlag);
 }
